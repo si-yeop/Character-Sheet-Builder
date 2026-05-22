@@ -43,6 +43,18 @@ function updateScaledLayoutHeight() {
   }
 }
 
+function refreshImageLayouts() {
+  imageDropZones.forEach((zone) => {
+    if (!zone.classList.contains("has-image")) {
+      return;
+    }
+
+    updateImageTransform(zone);
+    clampImagePosition(zone);
+    updateImageTransform(zone);
+  });
+}
+
 function updateColor(input) {
   const character = input.dataset.characterInput;
   const field = input.dataset.field;
@@ -86,13 +98,36 @@ function updateImageTransform(zone) {
   const preview = zone.querySelector("[data-image-preview]");
   const state = getImageState(zone);
 
+  if (preview.naturalWidth && preview.naturalHeight && zone.clientWidth && zone.clientHeight) {
+    const zoneRatio = zone.clientWidth / zone.clientHeight;
+    const imageRatio = preview.naturalWidth / preview.naturalHeight;
+    let baseWidth = zone.clientWidth;
+    let baseHeight = zone.clientHeight;
+
+    if (imageRatio > zoneRatio) {
+      baseHeight = zone.clientHeight;
+      baseWidth = baseHeight * imageRatio;
+    } else {
+      baseWidth = zone.clientWidth;
+      baseHeight = baseWidth / imageRatio;
+    }
+
+    preview.style.width = `${baseWidth}px`;
+    preview.style.height = `${baseHeight}px`;
+    preview.style.left = `${(zone.clientWidth - baseWidth) / 2}px`;
+    preview.style.top = `${(zone.clientHeight - baseHeight) / 2}px`;
+  }
+
   preview.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
 }
 
 function clampImagePosition(zone) {
+  const preview = zone.querySelector("[data-image-preview]");
   const state = getImageState(zone);
-  const maxX = (zone.clientWidth * (state.scale - 1)) / 2;
-  const maxY = (zone.clientHeight * (state.scale - 1)) / 2;
+  const baseWidth = parseFloat(preview.style.width) || zone.clientWidth;
+  const baseHeight = parseFloat(preview.style.height) || zone.clientHeight;
+  const maxX = Math.max(0, (baseWidth * state.scale - zone.clientWidth) / 2);
+  const maxY = Math.max(0, (baseHeight * state.scale - zone.clientHeight) / 2);
 
   state.x = Math.max(-maxX, Math.min(maxX, state.x));
   state.y = Math.max(-maxY, Math.min(maxY, state.y));
@@ -112,6 +147,7 @@ function applyImage(file, zone) {
     state.x = 0;
     state.y = 0;
     state.scale = minImageScale;
+    updateImageTransform(zone);
     clampImagePosition(zone);
     updateImageTransform(zone);
     zone.classList.add("has-image");
@@ -133,6 +169,7 @@ function resetImage(zone) {
   state.isDragging = false;
   state.moved = false;
   state.suppressClick = false;
+  updateImageTransform(zone);
   clampImagePosition(zone);
   updateImageTransform(zone);
   zone.classList.remove("has-image", "is-moving", "is-dragover");
@@ -259,6 +296,7 @@ function setupImageControls(zone) {
       event.preventDefault();
       const nextScale = state.scale + (event.deltaY > 0 ? -0.08 : 0.08);
       state.scale = Math.min(4, Math.max(minImageScale, nextScale));
+      updateImageTransform(zone);
       clampImagePosition(zone);
       updateImageTransform(zone);
     },
@@ -519,29 +557,28 @@ async function drawImageDrop(ctx, element, rect) {
 
   const state = getImageState(element);
   const scale = state.scale || minImageScale;
-  const drawWidth = rect.width * scale;
-  const drawHeight = rect.height * scale;
+  const rectRatio = rect.width / rect.height;
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  let baseWidth = rect.width;
+  let baseHeight = rect.height;
+
+  if (imageRatio > rectRatio) {
+    baseHeight = rect.height;
+    baseWidth = baseHeight * imageRatio;
+  } else {
+    baseWidth = rect.width;
+    baseHeight = baseWidth / imageRatio;
+  }
+
+  const drawWidth = baseWidth * scale;
+  const drawHeight = baseHeight * scale;
   const drawX = rect.x + (rect.width - drawWidth) / 2 + state.x;
   const drawY = rect.y + (rect.height - drawHeight) / 2 + state.y;
-  const imageRatio = image.naturalWidth / image.naturalHeight;
-  const targetRatio = drawWidth / drawHeight;
-  let sx = 0;
-  let sy = 0;
-  let sw = image.naturalWidth;
-  let sh = image.naturalHeight;
-
-  if (imageRatio > targetRatio) {
-    sw = image.naturalHeight * targetRatio;
-    sx = (image.naturalWidth - sw) / 2;
-  } else {
-    sh = image.naturalWidth / targetRatio;
-    sy = (image.naturalHeight - sh) / 2;
-  }
 
   ctx.save();
   drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, 8);
   ctx.clip();
-  ctx.drawImage(image, sx, sy, sw, sh, drawX, drawY, drawWidth, drawHeight);
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   ctx.restore();
 }
 
@@ -735,6 +772,9 @@ document.querySelectorAll(".image-text-note").forEach((note) => {
 });
 
 savePngButton.addEventListener("click", saveAsPng);
-window.addEventListener("resize", updateScaledLayoutHeight);
+window.addEventListener("resize", () => {
+  updateScaledLayoutHeight();
+  refreshImageLayouts();
+});
 new ResizeObserver(updateScaledLayoutHeight).observe(document.querySelector(".app-shell"));
 updateScaledLayoutHeight();
