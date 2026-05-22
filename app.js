@@ -147,6 +147,10 @@ function setupImageControls(zone) {
       return;
     }
 
+    if (event.target.closest(".image-text-note")) {
+      return;
+    }
+
     if (zone.classList.contains("has-image")) {
       event.preventDefault();
       return;
@@ -164,6 +168,10 @@ function setupImageControls(zone) {
   zone.addEventListener("dragstart", (event) => event.preventDefault());
 
   zone.addEventListener("dblclick", (event) => {
+    if (event.target.closest(".image-text-note")) {
+      return;
+    }
+
     if (!zone.classList.contains("has-image")) {
       return;
     }
@@ -174,7 +182,7 @@ function setupImageControls(zone) {
   });
 
   zone.addEventListener("pointerdown", (event) => {
-    if (event.target.closest(".image-reset")) {
+    if (event.target.closest(".image-reset") || event.target.closest(".image-text-note")) {
       return;
     }
 
