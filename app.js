@@ -269,6 +269,38 @@ function syncFormState(source, clone) {
     }
 
     if (sourceField.type === "checkbox" || sourceField.type === "radio") {
+      const staticCheckbox = document.createElement("span");
+      staticCheckbox.className = "export-checkbox";
+      staticCheckbox.textContent = sourceField.checked ? "✓" : "";
+      cloneField.replaceWith(staticCheckbox);
+      return;
+    }
+
+    if (sourceField.type === "color") {
+      const staticColor = document.createElement("span");
+      staticColor.className = "export-color";
+      staticColor.style.backgroundColor = sourceField.value;
+      cloneField.replaceWith(staticColor);
+      return;
+    }
+
+    if (sourceField.tagName === "TEXTAREA") {
+      const staticText = document.createElement("div");
+      staticText.className = `${sourceField.className} export-static-field export-static-textarea`.trim();
+      staticText.textContent = sourceField.value.trim() || sourceField.placeholder || "";
+      cloneField.replaceWith(staticText);
+      return;
+    }
+
+    if (sourceField.type === "text") {
+      const staticText = document.createElement("div");
+      staticText.className = "export-static-field";
+      staticText.textContent = sourceField.value.trim() || sourceField.placeholder || "";
+      cloneField.replaceWith(staticText);
+      return;
+    }
+
+    if (sourceField.type === "checkbox" || sourceField.type === "radio") {
       cloneField.checked = sourceField.checked;
       cloneField.toggleAttribute("checked", sourceField.checked);
       return;

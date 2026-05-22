@@ -260,6 +260,7 @@ input[type="text"],
   top: 44px;
   bottom: 46px;
   z-index: 2;
+  width: auto;
   min-height: 0;
   margin: 0;
   padding: 8px;
@@ -278,6 +279,15 @@ input[type="text"],
   color: rgba(37, 37, 37, 0.34);
   font-size: 12px;
   font-weight: 700;
+}
+
+.image-text-note.export-static-field {
+  display: grid;
+  place-items: center;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 8px;
 }
 
 .image-drop.has-image .image-reset {
@@ -422,6 +432,65 @@ textarea {
 input[type="text"] {
   min-height: 40px;
   padding: 10px 12px;
+}
+
+.export-static-field {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 253, 247, 0.9);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.export-static-textarea {
+  min-height: 102px;
+  margin-top: 10px;
+  padding: 16px;
+}
+
+.required-box .export-static-textarea {
+  min-height: 54px;
+  margin: 0;
+  padding: 10px 12px;
+  border-color: rgba(217, 90, 97, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.animal-box .export-static-textarea {
+  min-height: 72px;
+  margin: 0;
+  padding: 12px;
+  border-color: color-mix(in srgb, var(--accent), transparent 72%);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.export-color {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.export-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  margin-right: 5px;
+  border: 1px solid #7a7a7a;
+  border-radius: 2px;
+  color: #252525;
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: -1px;
 }
 
 .wide-field {
