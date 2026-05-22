@@ -364,53 +364,282 @@ function downloadDataUrl(dataUrl, filename) {
   link.remove();
 }
 
-async function saveAsPng() {
-  const source = document.querySelector(".app-shell");
+function colorIsVisible(color) {
+  return color && color !== "transparent" && !color.endsWith(", 0)") && color !== "rgba(0, 0, 0, 0)";
+}
+
+function drawRoundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function getElementRect(element, rootRect) {
+  const rect = element.getBoundingClientRect();
+
+  return {
+    x: rect.left - rootRect.left,
+    y: rect.top - rootRect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function getFont(style) {
+  return `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const normalized = text.replace(/\r/g, "");
+  const result = [];
+
+  normalized.split("\n").forEach((line) => {
+    const words = line.split(/(\s+)/).filter(Boolean);
+    let current = "";
+
+    words.forEach((word) => {
+      const next = current + word;
+
+      if (current && ctx.measureText(next).width > maxWidth) {
+        result.push(current.trimEnd());
+        current = word.trimStart();
+      } else {
+        current = next;
+      }
+    });
+
+    result.push(current || "");
+  });
+
+  return result;
+}
+
+function drawTextBlock(ctx, text, rect, style, options = {}) {
+  const content = (text || "").trim();
+
+  if (!content) {
+    return;
+  }
+
+  const fontSize = parseFloat(style.fontSize) || 14;
+  const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.35;
+  const paddingX = options.paddingX ?? 12;
+  const paddingY = options.paddingY ?? 10;
+  const maxWidth = Math.max(1, rect.width - paddingX * 2);
+  const lines = wrapText(ctx, content, maxWidth);
+  const textHeight = lines.length * lineHeight;
+  let y = rect.y + paddingY + fontSize;
+
+  if (options.verticalCenter) {
+    y = rect.y + Math.max(fontSize, (rect.height - textHeight) / 2 + fontSize * 0.8);
+  }
+
+  ctx.save();
+  ctx.font = getFont(style);
+  ctx.fillStyle = colorIsVisible(style.color) ? style.color : "#252525";
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = options.align || style.textAlign || "left";
+
+  let x = rect.x + paddingX;
+  if (ctx.textAlign === "center") {
+    x = rect.x + rect.width / 2;
+  } else if (ctx.textAlign === "right") {
+    x = rect.x + rect.width - paddingX;
+  }
+
+  lines.forEach((line) => {
+    if (y <= rect.y + rect.height - paddingY + lineHeight) {
+      ctx.fillText(line, x, y);
+    }
+    y += lineHeight;
+  });
+
+  ctx.restore();
+}
+
+async function drawImageDrop(ctx, element, rect) {
+  const image = element.querySelector("[data-image-preview]");
+
+  if (!image?.src || !element.classList.contains("has-image")) {
+    return;
+  }
+
+  if (!image.complete) {
+    await image.decode();
+  }
+
+  const state = getImageState(element);
+  const scale = state.scale || minImageScale;
+  const drawWidth = rect.width * scale;
+  const drawHeight = rect.height * scale;
+  const drawX = rect.x + (rect.width - drawWidth) / 2 + state.x;
+  const drawY = rect.y + (rect.height - drawHeight) / 2 + state.y;
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const targetRatio = drawWidth / drawHeight;
+  let sx = 0;
+  let sy = 0;
+  let sw = image.naturalWidth;
+  let sh = image.naturalHeight;
+
+  if (imageRatio > targetRatio) {
+    sw = image.naturalHeight * targetRatio;
+    sx = (image.naturalWidth - sw) / 2;
+  } else {
+    sh = image.naturalWidth / targetRatio;
+    sy = (image.naturalHeight - sh) / 2;
+  }
+
+  ctx.save();
+  drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, 8);
+  ctx.clip();
+  ctx.drawImage(image, sx, sy, sw, sh, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+function shouldSkipExportElement(element) {
+  return element.matches(".toolbar, .toolbar *, input[type='file'], .image-reset, .upload-hint");
+}
+
+async function renderElement(ctx, element, rootRect) {
+  if (!(element instanceof HTMLElement) || shouldSkipExportElement(element)) {
+    return;
+  }
+
+  const style = getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) {
+    return;
+  }
+
+  const rect = getElementRect(element, rootRect);
+  if (rect.width <= 0 || rect.height <= 0) {
+    return;
+  }
+
+  const radius = parseFloat(style.borderTopLeftRadius) || 0;
+  let background = style.backgroundColor;
+  const borderColor = style.borderTopColor;
+  const borderWidth = parseFloat(style.borderTopWidth) || 0;
+
+  if (!colorIsVisible(background) && element.matches(".portrait, .small-image")) {
+    background = getComputedStyle(document.documentElement).getPropertyValue("--panel-soft").trim() || "#ebe7dd";
+  }
+
+  ctx.save();
+  if (colorIsVisible(background)) {
+    drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, radius);
+    ctx.fillStyle = background;
+    ctx.fill();
+  }
+
+  if (borderWidth > 0 && colorIsVisible(borderColor)) {
+    drawRoundRect(ctx, rect.x + borderWidth / 2, rect.y + borderWidth / 2, rect.width - borderWidth, rect.height - borderWidth, radius);
+    ctx.lineWidth = borderWidth;
+    ctx.strokeStyle = borderColor;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (element.classList.contains("image-drop")) {
+    await drawImageDrop(ctx, element, rect);
+  }
+
+  if (element.matches("input[type='color']")) {
+    ctx.save();
+    drawRoundRect(ctx, rect.x, rect.y, rect.width, rect.height, 7);
+    ctx.fillStyle = element.value;
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  if (element.matches("input[type='checkbox']")) {
+    ctx.save();
+    ctx.strokeStyle = "#7a7a7a";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(rect.x, rect.y, 13, 13);
+    if (element.checked) {
+      ctx.fillStyle = "#252525";
+      ctx.fillText("✓", rect.x + 2, rect.y + 11);
+    }
+    ctx.restore();
+    return;
+  }
+
+  if (element.matches("input[type='text'], textarea")) {
+    const text = element.value || element.placeholder || "";
+    drawTextBlock(ctx, text, rect, style, {
+      align: style.textAlign,
+      verticalCenter: element.classList.contains("image-text-note"),
+      paddingX: element.classList.contains("image-text-note") ? 8 : 12,
+      paddingY: element.classList.contains("image-text-note") ? 8 : 10,
+    });
+    return;
+  }
+
+  if (element.children.length === 0 || element.matches("h1, h2, p, span, strong, .keyword-strip")) {
+    drawTextBlock(ctx, element.textContent, rect, style, {
+      align: style.textAlign,
+      verticalCenter: element.matches(".image-label, .portrait-note, .keyword-strip, h2"),
+      paddingX: element.matches(".keyword-strip") ? 16 : 4,
+      paddingY: 4,
+    });
+  }
+
+  for (const child of element.children) {
+    await renderElement(ctx, child, rootRect);
+  }
+
+  if (element.matches(".required-box label") && element.querySelector("input[type='checkbox']")) {
+    drawTextBlock(ctx, element.textContent, rect, style, {
+      align: "left",
+      verticalCenter: true,
+      paddingX: 22,
+      paddingY: 0,
+    });
+  }
+}
+
+async function renderSheetToCanvas(source) {
   const width = Math.ceil(source.scrollWidth);
   const height = Math.ceil(source.scrollHeight);
-  const clone = createExportClone(source);
-  const styles = getStylesForExport();
-  const serializedClone = new XMLSerializer().serializeToString(clone);
-  const markup = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>${styles}</style>
-          ${serializedClone}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
-  const svgBlob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
-  const svgUrl = URL.createObjectURL(svgBlob);
-  const image = new Image();
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const rootRect = source.getBoundingClientRect();
 
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  ctx.scale(scale, scale);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f2ec";
+  ctx.fillRect(0, 0, width, height);
+
+  await renderElement(ctx, source, rootRect);
+
+  return canvas;
+}
+
+async function saveAsPng() {
+  const source = document.querySelector(".app-shell");
   savePngButton.disabled = true;
   savePngButton.textContent = "저장 중...";
 
   try {
-    await new Promise((resolve, reject) => {
-      image.onload = resolve;
-      image.onerror = reject;
-      image.src = svgUrl;
-    });
-
-    const canvas = document.createElement("canvas");
-    const scale = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = width * scale;
-    canvas.height = height * scale;
-
-    const context = canvas.getContext("2d");
-    context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f2ec";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.scale(scale, scale);
-    context.drawImage(image, 0, 0);
-
+    const canvas = await renderSheetToCanvas(source);
     downloadDataUrl(canvas.toDataURL("image/png"), "commission-sheet.png");
   } catch (error) {
-    alert("PNG 저장 중 문제가 생겼습니다. 입력한 사진이 너무 크면 용량을 줄인 뒤 다시 시도해 주세요.");
+    console.error(error);
+    alert("PNG 저장 중 문제가 생겼습니다. 사진을 초기화하거나 더 작은 이미지로 바꾼 뒤 다시 시도해 주세요.");
   } finally {
-    URL.revokeObjectURL(svgUrl);
     savePngButton.disabled = false;
     savePngButton.textContent = "PNG 저장";
   }
