@@ -346,6 +346,20 @@ input[type="text"],
   font-size: 13px;
 }
 
+.small-image .image-label {
+  display: none;
+}
+
+.small-image .image-text-note {
+  top: 14px;
+  bottom: 58px;
+  background: rgba(255, 253, 247, 0.96);
+}
+
+.small-image .upload-hint {
+  bottom: 14px;
+}
+
 .swatches {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -779,9 +793,12 @@ input[type="text"] {
   .image-text-note {
     left: 10px;
     right: 10px;
-    top: 40px;
-    bottom: 42px;
     font-size: 16px;
+  }
+
+  .small-image .image-text-note {
+    top: 12px;
+    bottom: 54px;
   }
 
   .upload-hint {
