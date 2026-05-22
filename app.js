@@ -6,6 +6,7 @@ const imageDropZones = document.querySelectorAll(".image-drop");
 const savePngButton = document.querySelector("#savePngButton");
 const imageStates = new WeakMap();
 const minImageScale = 1.08;
+const mobileCanvasWidth = 1460;
 
 const cssVarMap = {
   left: {
@@ -27,6 +28,19 @@ function setMode(mode) {
   modeButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.mode === mode);
   });
+
+  requestAnimationFrame(updateScaledLayoutHeight);
+}
+
+function updateScaledLayoutHeight() {
+  const source = document.querySelector(".app-shell");
+
+  if (window.matchMedia("(max-width: 1100px)").matches) {
+    const scale = Math.max(0.1, (window.innerWidth - 16) / mobileCanvasWidth);
+    document.body.style.minHeight = `${source.scrollHeight * scale + 24}px`;
+  } else {
+    document.body.style.minHeight = "";
+  }
 }
 
 function updateColor(input) {
@@ -403,6 +417,23 @@ function wrapText(ctx, text, maxWidth) {
   const normalized = text.replace(/\r/g, "");
   const result = [];
 
+  function pushWrappedToken(token, prefix = "") {
+    let current = prefix;
+
+    Array.from(token).forEach((char) => {
+      const next = current + char;
+
+      if (current && ctx.measureText(next).width > maxWidth) {
+        result.push(current.trimEnd());
+        current = char;
+      } else {
+        current = next;
+      }
+    });
+
+    return current;
+  }
+
   normalized.split("\n").forEach((line) => {
     const words = line.split(/(\s+)/).filter(Boolean);
     let current = "";
@@ -410,7 +441,9 @@ function wrapText(ctx, text, maxWidth) {
     words.forEach((word) => {
       const next = current + word;
 
-      if (current && ctx.measureText(next).width > maxWidth) {
+      if (ctx.measureText(word).width > maxWidth) {
+        current = pushWrappedToken(word.trimStart(), current);
+      } else if (current && ctx.measureText(next).width > maxWidth) {
         result.push(current.trimEnd());
         current = word.trimStart();
       } else {
@@ -432,23 +465,27 @@ function drawTextBlock(ctx, text, rect, style, options = {}) {
   }
 
   const fontSize = parseFloat(style.fontSize) || 14;
-  const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.35;
+  const rawLineHeight = Number.parseFloat(style.lineHeight);
+  const lineHeight = Number.isFinite(rawLineHeight) ? rawLineHeight : fontSize * 1.35;
   const paddingX = options.paddingX ?? 12;
   const paddingY = options.paddingY ?? 10;
   const maxWidth = Math.max(1, rect.width - paddingX * 2);
-  const lines = wrapText(ctx, content, maxWidth);
-  const textHeight = lines.length * lineHeight;
-  let y = rect.y + paddingY + fontSize;
-
-  if (options.verticalCenter) {
-    y = rect.y + Math.max(fontSize, (rect.height - textHeight) / 2 + fontSize * 0.8);
-  }
 
   ctx.save();
   ctx.font = getFont(style);
   ctx.fillStyle = colorIsVisible(style.color) ? style.color : "#252525";
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = options.align || style.textAlign || "left";
+
+  const lines = wrapText(ctx, content, maxWidth);
+  const maxLines = Math.max(1, Math.floor((rect.height - paddingY * 2) / lineHeight));
+  const visibleLines = lines.slice(0, maxLines);
+  const textHeight = visibleLines.length * lineHeight;
+  let y = rect.y + paddingY + fontSize;
+
+  if (options.verticalCenter) {
+    y = rect.y + Math.max(fontSize, (rect.height - textHeight) / 2 + fontSize * 0.8);
+  }
 
   let x = rect.x + paddingX;
   if (ctx.textAlign === "center") {
@@ -457,10 +494,12 @@ function drawTextBlock(ctx, text, rect, style, options = {}) {
     x = rect.x + rect.width - paddingX;
   }
 
-  lines.forEach((line) => {
-    if (y <= rect.y + rect.height - paddingY + lineHeight) {
-      ctx.fillText(line, x, y);
-    }
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.width, rect.height);
+  ctx.clip();
+
+  visibleLines.forEach((line) => {
+    ctx.fillText(line, x, y);
     y += lineHeight;
   });
 
@@ -683,3 +722,6 @@ document.querySelectorAll(".image-text-note").forEach((note) => {
 });
 
 savePngButton.addEventListener("click", saveAsPng);
+window.addEventListener("resize", updateScaledLayoutHeight);
+new ResizeObserver(updateScaledLayoutHeight).observe(document.querySelector(".app-shell"));
+updateScaledLayoutHeight();
