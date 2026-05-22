@@ -472,8 +472,8 @@ function drawTextBlock(ctx, text, rect, style, options = {}) {
   const maxWidth = Math.max(1, rect.width - paddingX * 2);
 
   ctx.save();
-  ctx.font = getFont(style);
-  ctx.fillStyle = colorIsVisible(style.color) ? style.color : "#252525";
+  ctx.font = options.font || getFont(style);
+  ctx.fillStyle = options.color || (colorIsVisible(style.color) ? style.color : "#252525");
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = options.align || style.textAlign || "left";
 
@@ -615,12 +615,17 @@ async function renderElement(ctx, element, rootRect) {
   }
 
   if (element.matches("input[type='text'], textarea")) {
-    const text = element.value || element.placeholder || "";
+    const hasValue = Boolean(element.value.trim());
+    const text = hasValue ? element.value : element.placeholder || "";
+    const placeholderFontSize = element.classList.contains("image-text-note") ? 12 : parseFloat(style.fontSize) || 14;
+
     drawTextBlock(ctx, text, rect, style, {
       align: style.textAlign,
       verticalCenter: element.classList.contains("image-text-note"),
       paddingX: element.classList.contains("image-text-note") ? 8 : 12,
       paddingY: element.classList.contains("image-text-note") ? 8 : 10,
+      color: hasValue ? undefined : "rgba(37, 37, 37, 0.42)",
+      font: hasValue ? undefined : `700 ${placeholderFontSize}px ${style.fontFamily}`,
     });
     return;
   }
@@ -649,22 +654,30 @@ async function renderElement(ctx, element, rootRect) {
 }
 
 async function renderSheetToCanvas(source) {
-  const width = Math.ceil(source.scrollWidth);
-  const height = Math.ceil(source.scrollHeight);
-  const scale = Math.min(2, window.devicePixelRatio || 1);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const rootRect = source.getBoundingClientRect();
+  document.body.classList.add("exporting-png");
+  await new Promise((resolve) => requestAnimationFrame(resolve));
 
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  ctx.scale(scale, scale);
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f2ec";
-  ctx.fillRect(0, 0, width, height);
+  try {
+    const width = Math.ceil(source.scrollWidth);
+    const height = Math.ceil(source.scrollHeight);
+    const scale = Math.min(2, window.devicePixelRatio || 1);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const rootRect = source.getBoundingClientRect();
 
-  await renderElement(ctx, source, rootRect);
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f2ec";
+    ctx.fillRect(0, 0, width, height);
 
-  return canvas;
+    await renderElement(ctx, source, rootRect);
+
+    return canvas;
+  } finally {
+    document.body.classList.remove("exporting-png");
+    updateScaledLayoutHeight();
+  }
 }
 
 async function saveAsPng() {

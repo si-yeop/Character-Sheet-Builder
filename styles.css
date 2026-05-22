@@ -305,6 +305,20 @@ input[type="text"],
   background: var(--bg);
 }
 
+body.exporting-png {
+  overflow-x: visible !important;
+}
+
+body.exporting-png .app-shell {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: 1460px !important;
+  max-width: none !important;
+  margin: 0 auto !important;
+  transform: none !important;
+}
+
 .capture-frame .toolbar,
 .capture-frame .upload-hint,
 .capture-frame .image-reset,
