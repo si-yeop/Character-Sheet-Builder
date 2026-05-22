@@ -24,10 +24,7 @@ body {
   margin: 0;
   color: var(--ink);
   font-family: Arial, "Noto Sans KR", sans-serif;
-  background:
-    linear-gradient(rgba(70, 68, 60, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, rgba(70, 68, 60, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
-    var(--bg);
+  background: var(--bg);
 }
 
 button,
@@ -294,10 +291,7 @@ input[type="text"],
 }
 
 .capture-frame {
-  background:
-    linear-gradient(rgba(70, 68, 60, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, rgba(70, 68, 60, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
-    var(--bg);
+  background: var(--bg);
 }
 
 .capture-frame .toolbar,
@@ -522,7 +516,7 @@ input[type="text"] {
 .relation-panel {
   display: grid;
   gap: 12px;
-  padding-top: 160px;
+  padding-top: 82px;
 }
 
 .relation-card {
