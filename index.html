@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>커미션 자료 메이커</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="title-block">
+          <p class="eyebrow">Character Sheet Builder</p>
+          <h1>커미션 자료 메이커</h1>
+        </div>
+        <div class="toolbar">
+          <div class="mode-switch" aria-label="틀 선택">
+            <button class="mode-button is-active" type="button" data-mode="pair">2인 페어</button>
+            <button class="mode-button" type="button" data-mode="single">1인 틀</button>
+          </div>
+          <button class="export-button" type="button" id="savePngButton">PNG 저장</button>
+        </div>
+      </header>
+
+      <section class="sheet mode-pair" aria-label="캐릭터 설정 미리보기">
+        <article class="character character-left" data-character="left">
+          <div class="portrait-panel">
+            <div class="portrait image-drop">
+              <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+              <img alt="" data-image-preview />
+              <span class="image-label">메인 이미지</span>
+              <span class="upload-hint">클릭해서 사진 넣기</span>
+              <button class="image-reset" type="button">초기화</button>
+              <p class="portrait-note">LEFT</p>
+            </div>
+            <div class="side-stack">
+              <div class="small-image image-drop">
+                <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+                <img alt="" data-image-preview />
+                <span class="image-label">표정 / 소품</span>
+                <span class="upload-hint">사진 넣기</span>
+                <button class="image-reset" type="button">초기화</button>
+              </div>
+              <div class="small-image image-drop">
+                <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+                <img alt="" data-image-preview />
+                <span class="image-label">상징 장면</span>
+                <span class="upload-hint">사진 넣기</span>
+                <button class="image-reset" type="button">초기화</button>
+              </div>
+              <div class="swatches" aria-label="왼쪽 캐릭터 색상">
+                <label>
+                  <span>Theme</span>
+                  <input type="color" data-field="theme" data-character-input="left" value="#6f7f76" />
+                </label>
+                <label>
+                  <span>Hair</span>
+                  <input type="color" data-field="hair" data-character-input="left" value="#2e2b28" />
+                </label>
+                <label>
+                  <span>Eye</span>
+                  <input type="color" data-field="eye" data-character-input="left" value="#6b8fa3" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="keyword-strip" data-preview="keywords">성격 키워드 / 성격 키워드 / 성격 키워드...</div>
+          <textarea data-field="appearance" data-character-input="left" placeholder="캐릭터 외관 설명"></textarea>
+
+          <div class="profile-grid">
+            <label>
+              <span>이름</span>
+              <input type="text" data-field="name" data-character-input="left" value="캐릭터 A" />
+            </label>
+            <label>
+              <span>성별</span>
+              <input type="text" data-field="gender" data-character-input="left" placeholder="성별" />
+            </label>
+            <label>
+              <span>키</span>
+              <input type="text" data-field="height" data-character-input="left" placeholder="- cm" />
+            </label>
+            <label>
+              <span>나이</span>
+              <input type="text" data-field="age" data-character-input="left" placeholder="- 세" />
+            </label>
+          </div>
+
+          <label class="wide-field">
+            <span>키워드</span>
+            <input type="text" data-field="keywords" data-character-input="left" value="성격 키워드 / 성격 키워드 / 성격 키워드..." />
+          </label>
+
+          <textarea class="notes" data-field="notes" data-character-input="left" placeholder="기타 중요 서술"></textarea>
+
+          <div class="required-box">
+            <strong>선택 정보</strong>
+            <div class="option-entry relation-only-option">
+              <label><input type="checkbox" /> 관계에서 숨기는 정보</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+            <div class="option-entry">
+              <label><input type="checkbox" /> 외관상 반드시 보일 특징</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+            <div class="option-entry">
+              <label><input type="checkbox" /> 서사상 빠지면 안 되는 설정</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+          </div>
+
+          <div class="animal-box single-animal-box">
+            <strong>동물화 요소</strong>
+            <div class="animal-grid">
+              <label>
+                <span>동물 모티프</span>
+                <input type="text" placeholder="예: 고양이, 여우, 토끼" />
+              </label>
+              <label>
+                <span>귀 / 뿔</span>
+                <input type="text" placeholder="형태, 크기, 위치" />
+              </label>
+              <label>
+                <span>꼬리 / 날개</span>
+                <input type="text" placeholder="길이, 움직임, 질감" />
+              </label>
+              <label>
+                <span>무늬 / 털색</span>
+                <input type="text" placeholder="반점, 줄무늬, 그라데이션" />
+              </label>
+            </div>
+            <textarea placeholder="동물화했을 때 꼭 살려야 하는 인상, 금지 요소, 의상과 연결되는 특징을 적어주세요."></textarea>
+          </div>
+        </article>
+
+        <section class="relation-panel" aria-label="관계 설정">
+          <div class="relation-card">
+            <h2>관계설명</h2>
+            <textarea id="relationText" placeholder="두 캐릭터의 관계성, 갈등, 거리감, 합의된 설정을 적어주세요."></textarea>
+          </div>
+          <div class="relation-animal-set">
+            <div class="animal-box relation-animal-box">
+              <strong>왼쪽 캐릭터 동물화 요소</strong>
+              <div class="animal-grid">
+                <label>
+                  <span>동물 모티프</span>
+                  <input type="text" placeholder="예: 고양이, 여우, 토끼" />
+                </label>
+                <label>
+                  <span>귀 / 뿔</span>
+                  <input type="text" placeholder="형태, 크기, 위치" />
+                </label>
+                <label>
+                  <span>꼬리 / 날개</span>
+                  <input type="text" placeholder="길이, 움직임, 질감" />
+                </label>
+                <label>
+                  <span>무늬 / 털색</span>
+                  <input type="text" placeholder="반점, 줄무늬, 그라데이션" />
+                </label>
+              </div>
+              <textarea placeholder="동물화했을 때 꼭 살려야 하는 인상, 금지 요소, 의상과 연결되는 특징을 적어주세요."></textarea>
+            </div>
+            <div class="animal-box relation-animal-box">
+              <strong>오른쪽 캐릭터 동물화 요소</strong>
+              <div class="animal-grid">
+                <label>
+                  <span>동물 모티프</span>
+                  <input type="text" placeholder="예: 고양이, 여우, 토끼" />
+                </label>
+                <label>
+                  <span>귀 / 뿔</span>
+                  <input type="text" placeholder="형태, 크기, 위치" />
+                </label>
+                <label>
+                  <span>꼬리 / 날개</span>
+                  <input type="text" placeholder="길이, 움직임, 질감" />
+                </label>
+                <label>
+                  <span>무늬 / 털색</span>
+                  <input type="text" placeholder="반점, 줄무늬, 그라데이션" />
+                </label>
+              </div>
+              <textarea placeholder="동물화했을 때 꼭 살려야 하는 인상, 금지 요소, 의상과 연결되는 특징을 적어주세요."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <article class="character character-right" data-character="right">
+          <div class="portrait-panel">
+            <div class="side-stack">
+              <div class="small-image image-drop">
+                <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+                <img alt="" data-image-preview />
+                <span class="image-label">표정 / 소품</span>
+                <span class="upload-hint">사진 넣기</span>
+                <button class="image-reset" type="button">초기화</button>
+              </div>
+              <div class="small-image image-drop">
+                <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+                <img alt="" data-image-preview />
+                <span class="image-label">상징 장면</span>
+                <span class="upload-hint">사진 넣기</span>
+                <button class="image-reset" type="button">초기화</button>
+              </div>
+              <div class="swatches" aria-label="오른쪽 캐릭터 색상">
+                <label>
+                  <span>Theme</span>
+                  <input type="color" data-field="theme" data-character-input="right" value="#8b7584" />
+                </label>
+                <label>
+                  <span>Hair</span>
+                  <input type="color" data-field="hair" data-character-input="right" value="#7a503c" />
+                </label>
+                <label>
+                  <span>Eye</span>
+                  <input type="color" data-field="eye" data-character-input="right" value="#707f4d" />
+                </label>
+              </div>
+            </div>
+            <div class="portrait image-drop">
+              <input type="file" accept="image/png,image/jpeg,image/webp" data-image-input />
+              <img alt="" data-image-preview />
+              <span class="image-label">메인 이미지</span>
+              <span class="upload-hint">클릭해서 사진 넣기</span>
+              <button class="image-reset" type="button">초기화</button>
+              <p class="portrait-note">RIGHT</p>
+            </div>
+          </div>
+
+          <div class="keyword-strip" data-preview="keywords">성격 키워드 / 성격 키워드 / 성격 키워드...</div>
+          <textarea data-field="appearance" data-character-input="right" placeholder="캐릭터 외관 설명"></textarea>
+
+          <div class="profile-grid">
+            <label>
+              <span>이름</span>
+              <input type="text" data-field="name" data-character-input="right" value="캐릭터 B" />
+            </label>
+            <label>
+              <span>성별</span>
+              <input type="text" data-field="gender" data-character-input="right" placeholder="성별" />
+            </label>
+            <label>
+              <span>키</span>
+              <input type="text" data-field="height" data-character-input="right" placeholder="- cm" />
+            </label>
+            <label>
+              <span>나이</span>
+              <input type="text" data-field="age" data-character-input="right" placeholder="- 세" />
+            </label>
+          </div>
+
+          <label class="wide-field">
+            <span>키워드</span>
+            <input type="text" data-field="keywords" data-character-input="right" value="성격 키워드 / 성격 키워드 / 성격 키워드..." />
+          </label>
+
+          <textarea class="notes" data-field="notes" data-character-input="right" placeholder="기타 중요 서술"></textarea>
+
+          <div class="required-box">
+            <strong>선택 정보</strong>
+            <div class="option-entry relation-only-option">
+              <label><input type="checkbox" /> 관계에서 숨기는 정보</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+            <div class="option-entry">
+              <label><input type="checkbox" /> 외관상 반드시 보일 특징</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+            <div class="option-entry">
+              <label><input type="checkbox" /> 서사상 빠지면 안 되는 설정</label>
+              <textarea placeholder="해당 내용을 기입하세요."></textarea>
+            </div>
+          </div>
+
+        </article>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
