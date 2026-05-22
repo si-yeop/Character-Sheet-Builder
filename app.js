@@ -415,4 +415,10 @@ imageDropZones.forEach((zone) => {
   });
 });
 
+document.querySelectorAll(".image-text-note").forEach((note) => {
+  ["click", "dblclick", "pointerdown", "pointerup", "mousedown", "mouseup", "touchstart", "wheel"].forEach((eventName) => {
+    note.addEventListener(eventName, (event) => event.stopPropagation());
+  });
+});
+
 savePngButton.addEventListener("click", saveAsPng);
